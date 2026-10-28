@@ -9,21 +9,22 @@
       aria-label="YouTube 影片網址"
       required
       [value]="url()"
+      [readonly]="loading()"
       (input)="url.set(urlInput.value)"
     />
-    <button type="submit" [disabled]="loading() === 'video'">取得字幕</button>
+    <button type="submit" [disabled]="loading()">取得字幕</button>
   </form>
 
   @if (loading() === 'video') {
     <p class="status" role="status">正在讀取影片資訊…</p>
   }
   @if (error()) {
-    <p class="error" role="alert">{{ error() }}</p>
+    <p class="error" role="alert" [textContent]="error()"></p>
   }
 
   @if (video(); as video) {
     <section>
-      <h2>{{ video.title }}</h2>
+      <h2 [textContent]="video.title"></h2>
 
       @if (video.tracks.length === 0) {
         <p class="notice" role="status">這支影片沒有可用的字幕</p>
@@ -43,37 +44,40 @@
               }
             </select>
           </label>
-          <label class="checkbox">
-            <input
-              #timestampToggle
-              type="checkbox"
-              [checked]="includeTimestamps()"
-              (change)="includeTimestamps.set(timestampToggle.checked)"
-            />
-            包含時間戳
-          </label>
-          <span class="actions">
-            <button type="button" [disabled]="!cues()?.length" (click)="copyAll()">
-              {{ copied() ? '已複製' : '複製全部' }}
-            </button>
-            <button type="button" [disabled]="!cues()?.length" (click)="download()">
-              下載 txt
-            </button>
-          </span>
+          @if (!loading()) {
+            <label class="checkbox">
+              <input
+                #timestampToggle
+                type="checkbox"
+                [checked]="includeTimestamps()"
+                (change)="includeTimestamps.set(timestampToggle.checked)"
+              />
+              包含時間戳
+            </label>
+            <span class="actions">
+              <button type="button" [disabled]="!cues()?.length" (click)="copyAll()">
+                {{ copied() ? '已複製' : '複製全部' }}
+              </button>
+              <button type="button" [disabled]="!cues()?.length" (click)="download()">
+                下載 txt
+              </button>
+            </span>
+          }
         </div>
 
         @if (loading() === 'transcript') {
           <p class="status" role="status">正在讀取字幕…</p>
-        }
-        @if (cues(); as cues) {
-          @if (cues.length === 0) {
-            <p class="notice" role="status">這個字幕軌沒有內容，請改選其他字幕軌</p>
-          } @else {
-            <ol class="transcript">
-              @for (line of displayLines(); track $index) {
-                <li>{{ line }}</li>
-              }
-            </ol>
+        } @else {
+          @if (cues(); as cues) {
+            @if (cues.length === 0) {
+              <p class="notice" role="status">這個字幕軌沒有內容，請改選其他字幕軌</p>
+            } @else {
+              <ol class="transcript">
+                @for (line of displayLines(); track $index) {
+                  <li>{{ line }}</li>
+                }
+              </ol>
+            }
           }
         }
       }
