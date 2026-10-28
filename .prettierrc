@@ -1,6 +1,9 @@
 {
   "printWidth": 100,
   "singleQuote": true,
+  "semi": false,
+  "trailingComma": "all",
+  "proseWrap": "always",
   "overrides": [
     {
       "files": "*.html",
