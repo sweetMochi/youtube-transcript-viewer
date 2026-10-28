@@ -1,44 +1,25 @@
-import { runOrThrow, type RunYtDlp } from './yt-dlp.ts';
+import type { Track, TrackKind, VideoInfo } from '@shared/types'
+import { runOrThrow, type RunYtDlp } from './yt-dlp.ts'
 
-export type TrackKind = 'manual' | 'auto';
-
-export interface Track {
-  /** `<kind>:<language>`，例如 `manual:zh-TW` */
-  id: string;
-  language: string;
-  languageName: string;
-  kind: TrackKind;
-}
-
-export interface VideoInfo {
-  videoId: string;
-  title: string;
-  webpageUrl: string;
-  durationSeconds: number | null;
-  tracks: Track[];
-  /** 沒有任何字幕軌時為 null */
-  defaultTrackId: string | null;
-}
-
-const PREFERRED_LANGUAGES = ['zh-TW', 'zh-Hant', 'zh', 'en'];
+const PREFERRED_LANGUAGES = ['zh-TW', 'zh-Hant', 'zh', 'en']
 
 /** yt-dlp `-J` 輸出中，每個字幕軌底下的一種格式 */
 interface YtDlpSubtitleFormat {
-  ext: string;
-  url: string;
-  name?: string;
+  ext: string
+  url: string
+  name?: string
 }
 
-type YtDlpSubtitles = Record<string, YtDlpSubtitleFormat[]>;
+type YtDlpSubtitles = Record<string, YtDlpSubtitleFormat[]>
 
 /** yt-dlp `-J` 輸出中用到的欄位 */
 interface YtDlpVideoJson {
-  id: string;
-  title: string;
-  webpage_url: string;
-  duration?: number | null;
-  subtitles?: YtDlpSubtitles;
-  automatic_captions?: YtDlpSubtitles;
+  id: string
+  title: string
+  webpage_url: string
+  duration?: number | null
+  subtitles?: YtDlpSubtitles
+  automatic_captions?: YtDlpSubtitles
 }
 
 export async function getVideoInfo(runYtDlp: RunYtDlp, url: string): Promise<VideoInfo> {
@@ -48,12 +29,12 @@ export async function getVideoInfo(runYtDlp: RunYtDlp, url: string): Promise<Vid
     '--no-playlist',
     '--',
     url,
-  ]);
-  const json = JSON.parse(stdout) as YtDlpVideoJson;
+  ])
+  const json = JSON.parse(stdout) as YtDlpVideoJson
   const tracks = [
     ...toTracks('manual', json.subtitles ?? {}),
     ...toTracks('auto', withoutTranslations(json.automatic_captions ?? {})),
-  ];
+  ]
   return {
     videoId: json.id,
     title: json.title,
@@ -61,37 +42,37 @@ export async function getVideoInfo(runYtDlp: RunYtDlp, url: string): Promise<Vid
     durationSeconds: json.duration ?? null,
     tracks,
     defaultTrackId: pickDefaultTrack(tracks)?.id ?? null,
-  };
+  }
 }
 
 /** 人工字幕優先；同種類中依偏好語言，沒有偏好語言時取第一軌 */
 function pickDefaultTrack(tracks: Track[]): Track | undefined {
   for (const kind of ['manual', 'auto'] as const) {
-    const ofKind = tracks.filter((track) => track.kind === kind);
+    const ofKind = tracks.filter((track) => track.kind === kind)
     for (const preferred of PREFERRED_LANGUAGES) {
-      const match = ofKind.find((track) => matchesLanguage(track.language, preferred));
-      if (match) return match;
+      const match = ofKind.find((track) => matchesLanguage(track.language, preferred))
+      if (match) return match
     }
-    if (ofKind.length > 0) return ofKind[0];
+    if (ofKind.length > 0) return ofKind[0]
   }
-  return undefined;
+  return undefined
 }
 
 /** `en` 符合 `en`、`en-GB`、`en-ehkg1hFWq8A`，不分大小寫 */
 function matchesLanguage(language: string, preferred: string) {
-  const lower = language.toLowerCase();
-  const target = preferred.toLowerCase();
-  return lower === target || lower.startsWith(`${target}-`);
+  const lower = language.toLowerCase()
+  const target = preferred.toLowerCase()
+  return lower === target || lower.startsWith(`${target}-`)
 }
 
 /** 只列出有 json3 格式的字幕軌 */
 function toTracks(kind: TrackKind, subtitles: YtDlpSubtitles): Track[] {
   return Object.entries(subtitles).flatMap(([language, formats]) => {
-    const json3 = formats.find((format) => format.ext === 'json3');
+    const json3 = formats.find((format) => format.ext === 'json3')
     return json3
       ? [{ id: `${kind}:${language}`, language, languageName: json3.name ?? language, kind }]
-      : [];
-  });
+      : []
+  })
 }
 
 /**
@@ -100,14 +81,14 @@ function toTracks(kind: TrackKind, subtitles: YtDlpSubtitles): Track[] {
  */
 function withoutTranslations(captions: YtDlpSubtitles): YtDlpSubtitles {
   const original = Object.entries(captions).filter(([, formats]) => {
-    const json3 = formats.find((format) => format.ext === 'json3');
-    return json3 && !new URL(json3.url).searchParams.has('tlang');
-  });
-  const languages = new Set(original.map(([language]) => language));
+    const json3 = formats.find((format) => format.ext === 'json3')
+    return json3 && !new URL(json3.url).searchParams.has('tlang')
+  })
+  const languages = new Set(original.map(([language]) => language))
   return Object.fromEntries(
     original.filter(
       ([language]) =>
         !(language.endsWith('-orig') && languages.has(language.slice(0, -'-orig'.length))),
     ),
-  );
+  )
 }
