@@ -1,12 +1,12 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { TranscriptApi, errorMessage, type VideoInfo } from './transcript-api';
+import type { Cue, VideoInfo } from '@shared/types';
+import { TranscriptApi, errorMessage } from './transcript-api.service';
 import {
   copyText,
   trackOptionLabels,
   transcriptLines,
   txtContent,
   txtFileName,
-  type Cue,
 } from './transcript-export';
 
 type Loading = 'video' | 'transcript' | null;
