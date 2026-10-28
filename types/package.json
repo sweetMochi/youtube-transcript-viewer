@@ -1,0 +1,6 @@
+{
+  "type": "module",
+  "name": "@shared/types",
+  "private": true,
+  "exports": "./index.ts"
+}
