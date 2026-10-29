@@ -54,11 +54,9 @@ export class App {
   }))
 
   /**
-   * 畫面上一律顯示時間戳；開關只影響複製與下載
+   * 畫面、複製與下載共用時間戳設定
    */
-  readonly displayLines = computed(() =>
-    transcriptLines(this.cues() ?? [], { ...this.lineOptions(), includeTimestamps: true }),
-  )
+  readonly displayLines = computed(() => transcriptLines(this.cues() ?? [], this.lineOptions()))
 
   readonly trackLabels = computed(() => trackOptionLabels(this.video()?.tracks ?? []))
 
