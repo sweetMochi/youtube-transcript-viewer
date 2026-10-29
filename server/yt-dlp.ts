@@ -50,6 +50,10 @@ function toApiError(stderr: string) {
   if (/video (is )?unavailable|has been removed|does not exist/i.test(stderr)) {
     return new ApiError('NOT_FOUND', '找不到這支影片，可能已被刪除或網址有誤')
   }
+  // 網址被截斷（videoId 不足 11 碼）是使用者複製不完整，與 yt-dlp 版本無關
+  if (/Incomplete YouTube ID|looks truncated/i.test(stderr)) {
+    return new ApiError('INVALID_URL', '影片網址不完整，請確認是否完整複製網址')
+  }
   console.error(stderr)
   return new ApiError(
     'YTDLP_FAILED',
