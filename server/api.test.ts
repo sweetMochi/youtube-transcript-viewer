@@ -255,6 +255,21 @@ describe('GET /api/video：yt-dlp 失敗', () => {
     })
   }
 
+  test('網址被截斷：回傳 400 INVALID_URL，並提示網址不完整', async (t) => {
+    const api = await startApi(
+      t,
+      failsWith(
+        'ERROR: [youtube:truncated_id] fB0xtVVADm: Incomplete YouTube ID fB0xtVVADm. URL https://www.youtube.com/watch?v=fB0xtVVADm looks truncated.\n',
+      ),
+    )
+    const { status, body } = await api.get(
+      videoPath('https://www.youtube.com/watch?v=fB0xtVVADm'),
+    )
+    assert.equal(status, 400)
+    assert.equal(body.error.code, 'INVALID_URL')
+    assert.match(body.error.message, /不完整/)
+  })
+
   test('其他錯誤：回傳 502 YTDLP_FAILED，並提示更新 yt-dlp', async (t) => {
     const api = await startApi(
       t,
